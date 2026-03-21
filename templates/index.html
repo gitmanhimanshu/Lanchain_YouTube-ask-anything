@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube RAG - Ask Anything</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .chat-container {
+            display: none;
+        }
+
+        .messages {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 15px;
+            max-width: 70%;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chunks {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .chunk {
+            background: white;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .chunk-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .video-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .video-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-item {
+            margin: 5px 0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 YouTube RAG</h1>
+            <p>Ask anything about any YouTube video</p>
+        </div>
+
+        <div class="card">
+            <div class="input-group">
+                <input type="text" id="videoId" placeholder="Enter YouTube Video ID (e.g., dQw4w9WgXcQ)" />
+                <button id="loadBtn" onclick="loadVideo()">Load Video</button>
+            </div>
+
+            <div id="status" class="status"></div>
+            
+            <div id="videoInfo" class="video-info">
+                <h3>📊 Video Loaded</h3>
+                <div class="info-item">Video ID: <strong id="infoVideoId"></strong></div>
+                <div class="info-item">Transcript Length: <strong id="infoLength"></strong> characters</div>
+                <div class="info-item">Chunks Created: <strong id="infoChunks"></strong></div>
+            </div>
+
+            <div id="chatContainer" class="chat-container">
+                <div id="messages" class="messages"></div>
+                
+                <div class="input-group">
+                    <input type="text" id="query" placeholder="Ask a question about the video..." onkeypress="handleKeyPress(event)" />
+                    <button id="askBtn" onclick="askQuestion()">Ask</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        async function loadVideo() {
+            const videoId = document.getElementById('videoId').value.trim();
+            
+            if (!videoId) {
+                showStatus('Please enter a video ID', 'error');
+                return;
+            }
+
+            const loadBtn = document.getElementById('loadBtn');
+            loadBtn.disabled = true;
+            loadBtn.innerHTML = '<span class="loader"></span> Loading...';
+            
+            showStatus('Fetching transcript and creating vector database...', 'info');
+
+            try {
+                const response = await fetch('/load_video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_id: videoId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('Video loaded successfully! Ask your questions below.', 'success');
+                    
+                    // Show video info
+                    document.getElementById('infoVideoId').textContent = data.video_id;
+                    document.getElementById('infoLength').textContent = data.transcript_length.toLocaleString();
+                    document.getElementById('infoChunks').textContent = data.chunks_count;
+                    document.getElementById('videoInfo').style.display = 'block';
+                    
+                    // Show chat container
+                    document.getElementById('chatContainer').style.display = 'block';
+                    document.getElementById('messages').innerHTML = '';
+                    document.getElementById('query').focus();
+                } else {
+                    showStatus(data.error || 'Failed to load video', 'error');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Video';
+            }
+        }
+
+        async function askQuestion() {
+            const query = document.getElementById('query').value.trim();
+            
+            if (!query) {
+                return;
+            }
+
+            const askBtn = document.getElementById('askBtn');
+            const queryInput = document.getElementById('query');
+            
+            // Add user message
+            addMessage(query, 'user');
+            queryInput.value = '';
+            
+            askBtn.disabled = true;
+            askBtn.innerHTML = '<span class="loader"></span>';
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    addMessage(data.answer, 'assistant', data.chunks);
+                } else {
+                    addMessage('Error: ' + (data.error || 'Unknown error'), 'assistant');
+                }
+            } catch (error) {
+                addMessage('Error: ' + error.message, 'assistant');
+            } finally {
+                askBtn.disabled = false;
+                askBtn.textContent = 'Ask';
+            }
+        }
+
+        function addMessage(text, sender, chunks = null) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let content = `<div class="message-content">${text}</div>`;
+            
+            if (chunks && chunks.length > 0) {
+                content += '<div class="chunks">';
+                content += '<div class="chunk-title">📄 Retrieved Chunks:</div>';
+                chunks.forEach((chunk, i) => {
+                    content += `<div class="chunk"><strong>Chunk ${i + 1}:</strong> ${chunk}</div>`;
+                });
+                content += '</div>';
+            }
+            
+            messageDiv.innerHTML = content;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                askQuestion();
+            }
+        }
+    </script>
+</body>
+</html>

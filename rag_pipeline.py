@@ -4,18 +4,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_answer(vector_db, query):
+def get_answer(vector_db, query, show_chunks=True):
     logger.info(f"Processing query: {query}")
     
     docs = vector_db.similarity_search(query, k=4)
     logger.info(f"Found {len(docs)} relevant documents from vector search")
     
-    print("\n📄 Retrieved Chunks:")
-    print("=" * 80)
-    for i, doc in enumerate(docs, 1):
-        print(f"\nChunk {i}:")
-        print(f"{doc.page_content}")
-        print("-" * 80)
+    if show_chunks:
+        print("\n📄 Retrieved Chunks:")
+        print("=" * 80)
+        for i, doc in enumerate(docs, 1):
+            print(f"\nChunk {i}:")
+            print(f"{doc.page_content}")
+            print("-" * 80)
     
     context = " ".join([doc.page_content for doc in docs])
     logger.info(f"Combined context length: {len(context)} characters")

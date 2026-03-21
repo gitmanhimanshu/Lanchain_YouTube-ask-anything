@@ -11,6 +11,7 @@ A RAG (Retrieval Augmented Generation) application that lets you ask questions a
 - 📝 Automatic transcript saving (stored in `transcripts/` folder)
 - 🔄 Automatic retry logic for API rate limits
 - 📊 Comprehensive logging to track the entire flow
+- 🌐 Beautiful web interface with real-time chat
 
 ## How It Works
 
@@ -30,7 +31,7 @@ A RAG (Retrieval Augmented Generation) application that lets you ask questions a
 
 3. Install dependencies:
    ```bash
-   pip install youtube-transcript-api langchain langchain-google-genai langchain-community faiss-cpu python-dotenv
+   pip install youtube-transcript-api langchain langchain-google-genai langchain-community faiss-cpu python-dotenv flask
    ```
 
 4. Create a `.env` file with your Google API key:
@@ -38,31 +39,34 @@ A RAG (Retrieval Augmented Generation) application that lets you ask questions a
    GOOGLE_API_KEY=your_api_key_here
    ```
 
-5. Run the application:
-   ```bash
-   python app.py
-   ```
-
 ## Usage
 
-```bash
-Enter YouTube Video ID: 9bANpAwmANU
-Fetching transcript...
-Splitting text...
-Creating vector DB...
-Ready! Ask questions 👇
+### Web Interface (Recommended)
 
-Ask: What is the main topic?
+```bash
+python web_app.py
 ```
+
+Then open http://localhost:5000 in your browser.
+
+### Command Line
+
+```bash
+python app.py
+```
+
+Then enter video ID and ask questions in the terminal.
 
 ## Project Structure
 
-- `app.py` - Main application entry point
+- `web_app.py` - Flask web application
+- `app.py` - CLI application entry point
 - `transcript.py` - YouTube transcript fetching
 - `splitter.py` - Text chunking logic
 - `vector_store.py` - FAISS vector database creation
 - `rag_pipeline.py` - Question answering with RAG
 - `config.py` - Configuration and API keys
+- `templates/index.html` - Web UI
 - `transcripts/` - Saved transcript files
 
 ## Technologies Used
@@ -71,3 +75,4 @@ Ask: What is the main topic?
 - Google Gemini - LLM and embeddings
 - FAISS - Vector similarity search
 - YouTube Transcript API - Transcript extraction
+- Flask - Web framework
